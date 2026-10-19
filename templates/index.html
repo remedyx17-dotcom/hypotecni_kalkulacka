@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hypoteční kalkulačka</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<main>
+  <h1>Hypoteční kalkulačka</h1>
+  <p class="sub">Orientační výpočet hypotečního potenciálu. Nejde o oficiální rozhodnutí banky.</p>
+
+  <div class="grid">
+    <form method="post" class="card">
+      <h2>Vaše údaje</h2>
+      {% for klic, popisek in [
+        ("prijem", "Čistý měsíční příjem (Kč)"),
+        ("vydaje", "Měsíční výdaje na živobytí (Kč)"),
+        ("splatky", "Splátky stávajících úvěrů (Kč/měs.)"),
+        ("cena", "Cena nemovitosti (Kč)"),
+        ("vlastni", "Vlastní zdroje (Kč)"),
+        ("urok", "Úroková sazba (% p. a.)"),
+        ("roky", "Doba splácení (roky)")] %}
+        <label for="{{ klic }}">{{ popisek }}</label>
+        <input id="{{ klic }}" name="{{ klic }}" value="{{ h[klic] }}" inputmode="decimal" required>
+      {% endfor %}
+      <button type="submit">Spočítat</button>
+      {% for chyba in chyby %}<p class="err">{{ chyba }}</p>{% endfor %}
+    </form>
+
+    <section class="card">
+      <h2>Výsledek</h2>
+      {% if v %}
+        <span class="badge {{ v.verdikt[0] }}">{{ v.verdikt[1] }}</span>
+        <div class="big">{{ v.splatka|kc }} <small>měsíčně</small></div>
+        <div class="row"><span>Výše úvěru</span><span>{{ v.uver|kc }}</span></div>
+        <div class="row"><span>LTV</span><span>{{ "%.1f"|format(v.ltv) }} %</span></div>
+        <div class="row"><span>DSTI</span><span>{{ "%.1f"|format(v.dsti) }} %</span></div>
+        <div class="row"><span>DTI</span><span>{{ "%.2f"|format(v.dti) }}×</span></div>
+        <div class="row"><span>Maximální měsíční splátka</span><span>{{ v.max_splatka|kc }}</span></div>
+        <div class="row"><span>Odhad maximálního úvěru</span><span>{{ v.max_uver|kc }}</span></div>
+        <ul class="checks">
+          {% for text, ok in v.podminky.items() %}
+            <li><span class="badge {{ 'ok' if ok else 'bad' }}">{{ "OK" if ok else "Nesplněno" }}</span> {{ text }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">Vyplňte údaje a klikněte na „Spočítat“.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <section class="card todo">
+    <h2>Připravujeme</h2>
+    <p>Amortizační plán, graf splácení, porovnání scénářů, uložení výpočtů do databáze a export do PDF.</p>
+  </section>
+</main>
+</body>
+</html>
