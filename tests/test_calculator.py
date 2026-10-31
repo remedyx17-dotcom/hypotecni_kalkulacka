@@ -1,6 +1,6 @@
 import os, sys, unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from calculator import Vstup, amortizace, max_uver, mesicni_splatka, validuj, vypocitej
+from calculator import Vstup, amortizace, max_uver, scenare, mesicni_splatka, validuj, vypocitej
 
 
 class TestVypocty(unittest.TestCase):
@@ -27,6 +27,11 @@ class TestVypocty(unittest.TestCase):
 
     def test_splatka_4m_35_30(self):
         self.assertAlmostEqual(mesicni_splatka(4_000_000, 3.5, 30), 17961.79, delta=0.01)
+
+    def test_vyssi_urok_znamena_vyssi_splatku(self):
+        sc = scenare(4_000_000, 3.5, 30)
+        splatky = [r["splatka"] for r in sc]
+        self.assertEqual(splatky, sorted(splatky))
 
 
 if __name__ == "__main__":

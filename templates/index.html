@@ -7,10 +7,11 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+<header class="hero"><div>
+  <h1>🏠 Hypoteční kalkulačka</h1>
+  <p>Orientační výpočet hypotečního potenciálu. Nejde o oficiální rozhodnutí banky.</p>
+</div></header>
 <main>
-  <h1>Hypoteční kalkulačka</h1>
-  <p class="sub">Orientační výpočet hypotečního potenciálu. Nejde o oficiální rozhodnutí banky.</p>
-
   <div class="grid">
     <form method="post" class="card">
       <h2>Vaše údaje</h2>
@@ -34,10 +35,16 @@
       {% if v %}
         <span class="badge {{ v.verdikt[0] }}">{{ v.verdikt[1] }}</span>
         <div class="big">{{ v.splatka|kc }} <small>měsíčně</small></div>
+        {% for nazev, hodnota, limit, fmt in [
+          ("LTV (výše úvěru / hodnota nemovitosti)", v.ltv, v.limity.ltv, "%.1f %%"),
+          ("DSTI (podíl splátek na příjmu)", v.dsti, v.limity.dsti, "%.1f %%"),
+          ("DTI (zadlužení / roční příjem)", v.dti, v.limity.dti, "%.2f×")] %}
+        <div class="metric">
+          <div class="row"><span>{{ nazev }}</span><span>{{ fmt|format(hodnota) }} <small>limit {{ "%g"|format(limit) }}</small></span></div>
+          <div class="bar {{ '' if hodnota <= limit else 'over' }}"><i style="width: {{ [hodnota / limit * 100, 100]|min }}%"></i></div>
+        </div>
+        {% endfor %}
         <div class="row"><span>Výše úvěru</span><span>{{ v.uver|kc }}</span></div>
-        <div class="row"><span>LTV</span><span>{{ "%.1f"|format(v.ltv) }} %</span></div>
-        <div class="row"><span>DSTI</span><span>{{ "%.1f"|format(v.dsti) }} %</span></div>
-        <div class="row"><span>DTI</span><span>{{ "%.2f"|format(v.dti) }}×</span></div>
         <div class="row"><span>Maximální měsíční splátka</span><span>{{ v.max_splatka|kc }}</span></div>
         <div class="row"><span>Odhad maximálního úvěru</span><span>{{ v.max_uver|kc }}</span></div>
         <ul class="checks">
@@ -52,24 +59,75 @@
   </div>
 
   {% if v %}
-  <section class="card" style="margin-top:16px">
-    <h2>Amortizační plán (po letech)</h2>
-    <p class="muted">Celkem zaplatíte {{ v.celkem_zaplaceno|kc }}, z toho na úrocích {{ v.celkem_urok|kc }}.</p>
-    <div class="tablewrap">
-      <table>
+  <div class="grid">
+    <section class="card">
+      <h2>Kolik zaplatíte celkem</h2>
+      <p class="muted">Celkem {{ v.celkem_zaplaceno|kc }}, z toho úroky {{ v.celkem_urok|kc }}.</p>
+      <div class="chartbox"><canvas id="donut"></canvas></div>
+    </section>
+    <section class="card">
+      <h2>Vývoj zůstatku úvěru</h2>
+      <p class="muted">Zbývající dluh na konci každého roku.</p>
+      <div class="chartbox"><canvas id="line"></canvas></div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-bottom:16px">
+    <h2>Porovnání scénářů úrokové sazby</h2>
+    <div class="tablewrap"><table>
+      <tr><th>Úroková sazba</th><th>Měsíční splátka</th><th>Úroky celkem</th></tr>
+      {% for s in v.scenare %}
+      <tr {% if s.zmena == 0 %}class="cur"{% endif %}>
+        <td>{{ "%.2f"|format(s.urok) }} %{% if s.zmena == 0 %} (vaše){% endif %}</td>
+        <td>{{ s.splatka|kc }}</td><td>{{ s.celkem_urok|kc }}</td>
+      </tr>
+      {% endfor %}
+    </table></div>
+  </section>
+
+  <section class="card" style="margin-bottom:16px">
+    <details>
+      <summary>Amortizační plán po letech</summary>
+      <div class="tablewrap"><table>
         <tr><th>Rok</th><th>Úroky</th><th>Jistina</th><th>Zůstatek</th></tr>
         {% for r in v.plan %}
         <tr><td>{{ r.rok }}</td><td>{{ r.urok|kc }}</td><td>{{ r.jistina|kc }}</td><td>{{ r.zustatek|kc }}</td></tr>
         {% endfor %}
-      </table>
-    </div>
+      </table></div>
+    </details>
   </section>
   {% endif %}
 
   <section class="card todo">
     <h2>Připravujeme</h2>
-    <p>Graf splácení, porovnání scénářů, uložení výpočtů do databáze a export do PDF.</p>
+    <p style="margin:0">Uložení výpočtů do databáze a export do PDF.</p>
   </section>
 </main>
+
+{% if v %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const plan = {{ v.plan|tojson }};
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+Chart.defaults.color = css("--muted");
+Chart.defaults.borderColor = css("--line");
+new Chart(document.getElementById("donut"), {
+  type: "doughnut",
+  data: { labels: ["Jistina", "Úroky"],
+          datasets: [{ data: [{{ v.uver|int }}, {{ v.celkem_urok|int }}],
+                       backgroundColor: [css("--accent"), "#f59e0b"], borderWidth: 0 }] },
+  options: { maintainAspectRatio: false, cutout: "62%", plugins: { legend: { position: "bottom" } } }
+});
+new Chart(document.getElementById("line"), {
+  type: "line",
+  data: { labels: plan.map(r => r.rok),
+          datasets: [{ label: "Zůstatek (Kč)", data: plan.map(r => Math.round(r.zustatek)),
+                       borderColor: css("--accent"), backgroundColor: "rgba(37,99,235,.15)",
+                       fill: true, tension: .25, pointRadius: 0 }] },
+  options: { maintainAspectRatio: false, plugins: { legend: { display: false } },
+             scales: { x: { title: { display: true, text: "Rok" } } } }
+});
+</script>
+{% endif %}
 </body>
 </html>

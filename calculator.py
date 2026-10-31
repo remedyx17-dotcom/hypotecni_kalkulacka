@@ -57,6 +57,17 @@ def amortizace(jistina: float, urok_pa: float, roky: int) -> list[dict]:
     return plan
 
 
+def scenare(jistina: float, urok_pa: float, roky: int) -> list[dict]:
+    """Porovnání splátky při změně úrokové sazby o -1, 0, +1 a +2 procentní body."""
+    vysledek = []
+    for zmena in (-1.0, 0.0, 1.0, 2.0):
+        urok = max(urok_pa + zmena, 0.0)
+        splatka = mesicni_splatka(jistina, urok, roky)
+        vysledek.append({"zmena": zmena, "urok": urok, "splatka": splatka,
+                         "celkem_urok": splatka * roky * 12 - jistina})
+    return vysledek
+
+
 def validuj(v: Vstup) -> list[str]:
     """Vrátí seznam chyb (prázdný seznam = vstup je v pořádku)."""
     chyby = []
@@ -104,6 +115,8 @@ def vypocitej(v: Vstup) -> dict:
         "max_uver": max_uver(max_splatka, v.urok, v.roky),
         "podminky": podminky, "verdikt": verdikt,
         "plan": amortizace(uver, v.urok, v.roky),
+        "scenare": scenare(uver, v.urok, v.roky),
+        "limity": LIMITY,
         "celkem_zaplaceno": splatka * v.roky * 12,
         "celkem_urok": splatka * v.roky * 12 - uver,
     }
