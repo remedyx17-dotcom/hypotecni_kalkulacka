@@ -51,9 +51,24 @@
     </section>
   </div>
 
+  {% if v %}
+  <section class="card" style="margin-top:16px">
+    <h2>Amortizační plán (po letech)</h2>
+    <p class="muted">Celkem zaplatíte {{ v.celkem_zaplaceno|kc }}, z toho na úrocích {{ v.celkem_urok|kc }}.</p>
+    <div class="tablewrap">
+      <table>
+        <tr><th>Rok</th><th>Úroky</th><th>Jistina</th><th>Zůstatek</th></tr>
+        {% for r in v.plan %}
+        <tr><td>{{ r.rok }}</td><td>{{ r.urok|kc }}</td><td>{{ r.jistina|kc }}</td><td>{{ r.zustatek|kc }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
   <section class="card todo">
     <h2>Připravujeme</h2>
-    <p>Amortizační plán, graf splácení, porovnání scénářů, uložení výpočtů do databáze a export do PDF.</p>
+    <p>Graf splácení, porovnání scénářů, uložení výpočtů do databáze a export do PDF.</p>
   </section>
 </main>
 </body>

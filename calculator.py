@@ -38,6 +38,25 @@ def max_uver(splatka: float, urok_pa: float, roky: int) -> float:
     return splatka * (1 - (1 + r) ** -n) / r
 
 
+def amortizace(jistina: float, urok_pa: float, roky: int) -> list[dict]:
+    """Roční přehled splácení: úroky, splacená jistina a zůstatek na konci roku."""
+    splatka = mesicni_splatka(jistina, urok_pa, roky)
+    r = urok_pa / 100 / 12
+    zustatek = jistina
+    plan = []
+    for rok in range(1, roky + 1):
+        urok_rok = jistina_rok = 0.0
+        for _ in range(12):
+            urok_m = zustatek * r
+            jistina_m = splatka - urok_m
+            zustatek -= jistina_m
+            urok_rok += urok_m
+            jistina_rok += jistina_m
+        plan.append({"rok": rok, "urok": urok_rok, "jistina": jistina_rok,
+                     "zustatek": max(zustatek, 0.0)})
+    return plan
+
+
 def validuj(v: Vstup) -> list[str]:
     """Vrátí seznam chyb (prázdný seznam = vstup je v pořádku)."""
     chyby = []
@@ -84,4 +103,7 @@ def vypocitej(v: Vstup) -> dict:
         "max_splatka": max_splatka,
         "max_uver": max_uver(max_splatka, v.urok, v.roky),
         "podminky": podminky, "verdikt": verdikt,
+        "plan": amortizace(uver, v.urok, v.roky),
+        "celkem_zaplaceno": splatka * v.roky * 12,
+        "celkem_urok": splatka * v.roky * 12 - uver,
     }

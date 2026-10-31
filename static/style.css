@@ -19,3 +19,9 @@ button{margin-top:16px;width:100%;padding:12px;border:0;border-radius:8px;backgr
 .ok{background:#dff3e8;color:var(--ok)}.bad{background:#fbe0e0;color:var(--bad)}.warn{background:#fdecd0;color:var(--warn)}
 ul.checks{list-style:none;padding:0;margin:12px 0 0}ul.checks li{padding:5px 0}
 .todo{border-style:dashed;color:var(--muted);margin-top:16px}
+
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:600}

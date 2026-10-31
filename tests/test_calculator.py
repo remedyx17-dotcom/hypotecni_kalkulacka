@@ -1,6 +1,6 @@
 import os, sys, unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from calculator import Vstup, max_uver, mesicni_splatka, validuj, vypocitej
+from calculator import Vstup, amortizace, max_uver, mesicni_splatka, validuj, vypocitej
 
 
 class TestVypocty(unittest.TestCase):
@@ -18,6 +18,15 @@ class TestVypocty(unittest.TestCase):
         r = vypocitej(Vstup(55000, 20000, 0, 5_000_000, 1_000_000, 4.9, 30))
         self.assertAlmostEqual(r["ltv"], 80.0)
         self.assertEqual(r["verdikt"][0], "ok")
+
+    def test_amortizace_splati_cely_uver(self):
+        plan = amortizace(4_000_000, 3.5, 30)
+        self.assertEqual(len(plan), 30)
+        self.assertAlmostEqual(plan[-1]["zustatek"], 0, places=2)
+        self.assertAlmostEqual(sum(r["jistina"] for r in plan), 4_000_000, places=2)
+
+    def test_splatka_4m_35_30(self):
+        self.assertAlmostEqual(mesicni_splatka(4_000_000, 3.5, 30), 17961.79, delta=0.01)
 
 
 if __name__ == "__main__":
